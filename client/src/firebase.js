@@ -3,7 +3,8 @@ import "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDcgOKOzyl6WvWZRb0prqExBrnmA4wvMjc",
-  authDomain: "imminent-by-weinvincible.firebaseapp.com",
+  // authDomain: "imminent-by-weinvincible.firebaseapp.com",
+  authDomain: "imminentness.netlify.app",
   projectId: "imminent-by-weinvincible",
   storageBucket: "imminent-by-weinvincible.appspot.com",
   messagingSenderId: "134498210398",
