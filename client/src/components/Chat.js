@@ -1,146 +1,127 @@
-import React, { useState, useContext } from "react";
-import { TabContent, TabPane, Nav, NavItem, NavLink } from "reactstrap";
-import classnames from "classnames";
-import { WebcamContext } from "../WebcamProvider";
+import { Fragment, useEffect } from 'react';
 
-//ICONS
-import { MdSend } from "react-icons/md";
-// import { BsPeople, BsChatSquare } from "react-icons/bs";
+import { Tab } from '@headlessui/react';
+import { Send } from 'iconsax-react';
+import { useSelector } from 'react-redux';
+import { useParams } from 'react-router-dom';
 
-const Chat = ({ messages }) => {
-  const { peers, socketRef, user } = useContext(WebcamContext);
-  const [activeTab, setActiveTab] = useState("1");
-  const toggle = (tab) => {
-    if (activeTab !== tab) setActiveTab(tab);
-  };
+import Avatar from '../assets/images/avatar.jpg';
 
-  const [inputMessage, setInputMessage] = useState("");
+const Chat = ({ socketId, peers, message, setMessage, sendMessage }) => {
+  const user = useSelector((state) => state.user.user);
+  const tabs = ['Chat', 'People'];
 
-  const sendMessage = () => {
-    const messageObject = {
-      body: inputMessage,
-      userName: user.displayName,
-      userID: socketRef.current.id,
+  const { id: roomId } = useParams();
+  const chat = useSelector((state) => state.chat.chat);
+  const roomChat = chat[roomId] ?? [];
+
+  useEffect(() => {
+    return () => {
+      sessionStorage.removeItem('chat');
     };
-    setInputMessage("");
-    socketRef.current.emit("send message", messageObject);
-  };
-
-  const handleChange = (e) => {
-    setInputMessage(e.target.value);
-  };
+  }, []);
 
   return (
-    <div className="chat-section">
-      <div className="chat-window">
-        <Nav tabs justified className="nav">
-          <NavItem>
-            <NavLink
-              className={classnames("navlink", { active: activeTab === "1" })}
-              onClick={() => {
-                toggle("1");
-              }}
-            >
-              People
-            </NavLink>
-          </NavItem>
-          <NavItem>
-            <NavLink
-              className={classnames("navlink", { active: activeTab === "2" })}
-              onClick={() => {
-                toggle("2");
-              }}
-            >
-              Chat
-            </NavLink>
-          </NavItem>
-        </Nav>
-        <TabContent activeTab={activeTab} id="tab-content">
-          <TabPane tabId="1" id="people-body">
-            <div id="people">
-              <div className="person">
-                <img
-                  src={user.photoURL}
-                  width="40px"
-                  className="rounded-circle"
-                />
-                <span className="person-name">You</span>
-              </div>
-              {peers.map((peer) => {
-                return (
-                  <div className="person" key={peer.peerID}>
-                    {peer.userImage ? (
-                      <img
-                        src={peer.userImage}
-                        width="40px"
-                        className="rounded-circle"
-                      />
-                    ) : (
-                      <img
-                        src={require("../images/login-avatar.jpg").default}
-                        width="40px"
-                        className="rounded-circle"
-                      />
-                    )}
-                    <span className="person-name">{peer.userName}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </TabPane>
-          <TabPane tabId="2" id="chat-body">
-            <div id="chats">
-              {messages.map((message, index) => {
-                if (message.userID === socketRef.current.id) {
-                  return (
-                    <span className="chat-bubble" key={index}>
-                      <span className="chat-user">You</span>
-                      <span className="chat-message">{message.body}</span>
-                    </span>
-                  );
-                } else {
-                  return (
-                    <span className="chat-bubble" key={index}>
-                      <span className="chat-user">{message.userName}</span>
-                      <span className="chat-message">{message.body}</span>
-                    </span>
-                  );
-                }
-              })}
-            </div>
-            <div id="chat-action">
+    <div className="rounded-2xl bg-slate-100 px-3 py-2 w-[95vw] md:w-[300px] ">
+      <Tab.Group>
+        <Tab.List className="flex">
+          {tabs.map((label, i) => (
+            <Tab as={Fragment} key={i}>
+              {({ selected }) => (
+                <div
+                  className={`text-center font-semibold cursor-pointer pb-1 w-full ${
+                    selected ? 'text-sky-600 border-b-2 border-sky-600' : ''
+                  }`}>
+                  {label}
+                </div>
+              )}
+            </Tab>
+          ))}
+        </Tab.List>
+        <Tab.Panels className="overflow-auto" style={{ height: 'calc(100vh - 190px)' }}>
+          {/* CHAT TAB  */}
+          <Tab.Panel className="p-2 h-full flex flex-col-reverse">
+            {/* MSG INPUT FIELD AND SEND BTN  */}
+            <div className="flex items-center gap-2">
               <input
+                id="msgInput"
                 type="text"
-                placeholder="Type a message..."
-                style={{
-                  border: "none",
-                  borderRadius: "30px",
-                  padding: "6px 8px",
-                  fontWeight: "bold",
-                  fontSize: ".8em",
-                  marginRight: "5px",
-                  width: "100%",
+                className="rounded-lg p-3 py-1 w-full text-sm"
+                value={message}
+                onKeyUp={(e) => {
+                  if (e.code === 'Enter') {
+                    sendMessage();
+                  }
                 }}
-                className="type-message"
-                onChange={handleChange}
-                value={inputMessage}
+                onChange={(e) => setMessage(e.target.value)}
               />
-              <button
-                style={{
-                  border: "none",
-                  borderRadius: "100%",
-                  backgroundColor: " #0252af",
-                  width: "30px",
-                  height: "30px",
-                }}
+              <Send
+                size="40"
+                variant="Bulk"
+                className="text-sky-600 cursor-pointer"
                 onClick={sendMessage}
-              >
-                <MdSend style={{ color: "white", margin: "0 0 2px 2px" }} />
-              </button>
+              />
             </div>
-          </TabPane>
-        </TabContent>
-      </div>
+            <div id="messages" className="flex flex-col-reverse h-full overflow-auto">
+              {roomChat
+                .slice(0)
+                .reverse()
+                .map((msg) =>
+                  msg.user.socketId === socketId ? (
+                    //  MY MESSAGE
+                    <div className="mb-3" key={msg.messageId}>
+                      <div className="flex items-end justify-end">
+                        <div className="flex flex-col space-y-2 text-xs max-w-xs mx-2 order-1 items-end">
+                          <div>
+                            <span className="px-4 py-2 rounded-lg inline-block rounded-br-none bg-sky-600 text-white">
+                              {msg.message}
+                            </span>
+                          </div>
+                        </div>
+                        <img
+                          src={user.imageUrl ?? Avatar}
+                          alt=""
+                          className="w-6 h-6 rounded-full order-2"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    //  OTHER USERS MESSAGE
+                    <div className="mb-3" key={msg.messageId}>
+                      <div className="flex items-end">
+                        <div className="flex flex-col space-y-2 text-xs max-w-xs mx-2 order-2 items-start">
+                          <div>
+                            <span className="px-4 py-2 rounded-lg inline-block rounded-bl-none bg-gray-300 text-gray-600">
+                              {msg.message}
+                            </span>
+                          </div>
+                        </div>
+                        <img
+                          src={msg.user.imageUrl ?? Avatar}
+                          alt=""
+                          className="w-6 h-6 rounded-full order-1"
+                        />
+                      </div>
+                    </div>
+                  )
+                )}
+            </div>
+          </Tab.Panel>
+          {/* PEOPLE TAB  */}
+          <Tab.Panel className="p-2">
+            <div className="flex items-center gap-2 mb-2">
+              <img src={user.imageUrl} alt="" width={40} className="rounded-full" />
+              <span className="text-sm">Me</span>
+            </div>
+            {peers.map((peer) => (
+              <div className="flex items-center gap-2 mb-2" key={peer.user.socketId}>
+                <img src={peer.user.imageUrl} alt="" width={40} className="rounded-full" />
+                <span className="text-sm">{peer.user.name}</span>
+              </div>
+            ))}
+          </Tab.Panel>
+        </Tab.Panels>
+      </Tab.Group>
     </div>
   );
 };

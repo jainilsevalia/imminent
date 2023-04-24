@@ -1,154 +1,177 @@
-import React, { useContext, useEffect, useState } from "react";
-import Header from "../components/Header";
-import { Container, Row, Col } from "reactstrap";
-import { useHistory, useParams } from "react-router-dom";
+import { useEffect, useMemo, useRef } from 'react';
 
-//CONTEXTS
-import { UserContext } from "../UserProvider";
-import { WebcamContext } from "../WebcamProvider";
-//ICONS
-import { IconContext } from "react-icons";
-import { BiMicrophone, BiMicrophoneOff } from "react-icons/bi";
-import { FiVideo, FiVideoOff } from "react-icons/fi";
+import { Spring, animated } from '@react-spring/web';
+import { Video, VideoSlash, Microphone, MicrophoneSlash1 } from 'iconsax-react';
+import { useDispatch } from 'react-redux';
+import { useNavigate, useParams } from 'react-router-dom';
+import Webcam from 'react-webcam';
+
+import { setAudioState, setVideoState } from '../store/webcam-slice';
+import useWebcam from '../useWebcam';
 
 const JoinRoom = () => {
-  const user = useContext(UserContext);
+  const webcamRef = useRef();
+  // console.log(webcamRef, webcamRef.current);
   const {
-    webcamRef,
-    videoState,
-    microphoneState,
-    getMedia,
-    toggleMicrophone,
-    toggleVideo,
-    allUsers,
-    userGoingToJoinRoom,
-  } = useContext(WebcamContext);
+    webcamLoading,
+    webcamKey,
+    setWebcamLoading,
+    video,
+    microphone,
+    turnOffMicrophone,
+    turnOnMicrophone,
+    turnOffVideo,
+    turnOnVideo
+  } = useWebcam(webcamRef);
 
-  const { roomID } = useParams();
+  const { id } = useParams();
 
-  let history = useHistory();
-  const isAllowForJoin = () => {
-    if (user) {
-      // console.log(webcamRef.current.srcObject);
-      if (webcamRef.current.srcObject) {
-        const tracks = webcamRef.current.srcObject.getTracks();
-        tracks.forEach(function (track) {
-          track.stop();
-        });
-      }
-      history.replace(`/room/${roomID}`);
-    } else {
-      document.querySelector("#sign-in-msg").innerHTML =
-        "Please sign in first !";
-    }
-  };
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    if (user) {
-      if (videoState[0]) {
-        userGoingToJoinRoom(roomID);
-        getMedia({ audio: true, video: true });
-        setTimeout(() => {
-          document.querySelector(".webcam").style.display = "initial";
-          document.querySelector(".toggles").style.display = "initial";
-        }, 1000);
+    dispatch(setVideoState(true));
+    dispatch(setAudioState(true));
+
+    localStorage.setItem('routing', true);
+  }, []);
+
+  const navigate = useNavigate();
+
+  const tips = [
+    <>
+      You can press <kbd className="kbc-button no-container">V</kbd> to toggle video and{' '}
+      <kbd className="kbc-button no-container">M</kbd> to toggle microphone
+    </>,
+    'You can enter both id and meeting url in the input field which is given on home page to join the room',
+    <>
+      Press <kbd className="kbc-button no-container">C</kbd> to toggle the chat section inside room
+    </>
+  ];
+
+  const tipIndex = useMemo(() => Math.floor(Math.random() * tips.length), []);
+
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.code === 'KeyV') {
+        if (video) {
+          turnOffVideo();
+        } else {
+          turnOnVideo();
+        }
       }
-    }
-  }, [user]);
+      if (e.code === 'KeyM') {
+        if (microphone) {
+          turnOffMicrophone();
+        } else {
+          turnOnMicrophone();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [video, microphone]);
 
   return (
-    <div>
-      <Header user={user} isInMeeting={false} />
-      <Container fluid className="main">
-        <Row className="mx-0" style={{ width: "100%" }}>
-          <Col
-            className="d-flex flex-column justify-content-center text-center"
-            xl="6"
-            lg="6"
-          >
-            <span id="jumbotron">Ready to join?</span>
-            {allUsers.length ? (
-              <p>
-                {allUsers.map((user, i) => {
-                  if (allUsers.length === i + 1) {
-                    return <b key={user.userID}>{user.userName} </b>;
-                  } else {
-                    return <b key={user.userID}>{user.userName}, </b>;
-                  }
-                })}
-                present in the room.
-              </p>
-            ) : (
-              <p>No user in the meeting</p>
+    <>
+      <div
+        className="grid md:grid-cols-2 place-items-center  gap-y-5 md:gap-2 p-5 md:p-10"
+        style={{ height: 'calc(100vh - 64px)' }}>
+        <div className="text-center order-12 md:order-1">
+          <div className="text-2xl sm:text-4xl xl:text-5xl font-bold sm:font-medium">
+            Ready to join ?
+          </div>
+          <div className="mt-2">
+            <div className="text-sm sm:text-base">No users in the room</div>
+            <div className="mt-2">
+              <button
+                className="btn-primary"
+                onClick={() => navigate(`/room/${id}`, { replace: true })}>
+                Join now
+              </button>
+            </div>
+          </div>
+          <div className="rounded-lg border-2 border-dark p-3 mt-12 max-w-sm">
+            <p>
+              <strong>Tip: </strong> {tips[tipIndex]}
+            </p>
+          </div>
+        </div>
+        <div className="order-1 md:order-12">
+          <Spring from={{ opacity: 0 }} to={{ opacity: 1 }} delay={1500}>
+            {(styles) => (
+              <animated.div
+                style={styles}
+                className={`border-[3px] border-sky-800 rounded-2xl p-3 ${
+                  webcamLoading ? 'hidden' : ''
+                }`}>
+                <div className="bg:black relative">
+                  <Webcam
+                    key={webcamKey}
+                    ref={webcamRef}
+                    audio
+                    mirrored
+                    className="rounded-2xl"
+                    onUserMedia={() => {
+                      setWebcamLoading(false);
+                    }}
+                    muted
+                  />
+                  {!video && (
+                    <span
+                      className="absolute top-1/2 left-1/2 z-10 text-3xl text-white font-semibold"
+                      style={{ transform: 'translate(-50%,-50%)' }}>
+                      Camera is off
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex justify-center gap-4 mt-3">
+                  {video ? (
+                    <Video
+                      size={45}
+                      variant="Bulk"
+                      className="icon-square text-sky-600"
+                      onClick={turnOffVideo}
+                    />
+                  ) : (
+                    <VideoSlash
+                      size={45}
+                      variant="Bulk"
+                      className="icon-square"
+                      onClick={turnOnVideo}
+                    />
+                  )}
+                  {microphone ? (
+                    <Microphone
+                      size={45}
+                      variant="Bulk"
+                      className="icon-square text-sky-600"
+                      onClick={turnOffMicrophone}
+                    />
+                  ) : (
+                    <MicrophoneSlash1
+                      size={45}
+                      variant="Bulk"
+                      className="icon-square"
+                      onClick={turnOnMicrophone}
+                    />
+                  )}
+                </div>
+              </animated.div>
             )}
-            <div className="d-inline">
-              <a>
-                <button className="button-basic" onClick={isAllowForJoin}>
-                  Join now
-                </button>
-              </a>
+          </Spring>
+          {webcamLoading && (
+            <div className="flex flex-col items-center">
+              <div className="loader"></div>
+              <span className="mt-2 text-lg text-slate-500 font-semibold">Camera is starting</span>
             </div>
-            <b
-              id="sign-in-msg"
-              className="fade-in"
-              style={{ color: "#c84051", marginTop: "5px" }}
-            ></b>
-            <br />
-          </Col>
-          <Col xl="6" lg="6" id="imgCol" style={{ width: "100%" }}>
-            <div className="webcam-container">
-              <video
-                ref={webcamRef}
-                className="webcam fade-in"
-                autoPlay
-                muted
-              />
-              <div className="toggles">
-                <IconContext.Provider
-                  value={{
-                    style: {
-                      fontSize: "2.7em",
-                      margin: "0px 10px",
-                      backgroundColor: "white",
-                      padding: "10px",
-                      borderRadius: "15px",
-                      boxShadow: "1px 8px 20px 0px rgba(0,0,0,0.6)",
-                      color: " rgb(80, 80, 80 )",
-                      cursor: "pointer",
-                    },
-                  }}
-                >
-                  <span onClick={toggleVideo}>
-                    {videoState[0] ? (
-                      <FiVideo />
-                    ) : (
-                      <FiVideoOff
-                        style={{
-                          backgroundColor: "#3C64A5",
-                          color: "white",
-                        }}
-                      />
-                    )}
-                  </span>
-                  <span onClick={toggleMicrophone}>
-                    {microphoneState[0] ? (
-                      <BiMicrophone />
-                    ) : (
-                      <BiMicrophoneOff
-                        style={{
-                          backgroundColor: "#3C64A5",
-                          color: "white",
-                        }}
-                      />
-                    )}
-                  </span>
-                </IconContext.Provider>
-              </div>
-            </div>
-          </Col>
-        </Row>
-      </Container>
-    </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 };
 

@@ -1,102 +1,111 @@
-import React from "react";
-import { switchAccount } from "../firebase";
-//ICONS
-import { MdChat } from "react-icons/md";
-//ANIMATION
-import { Spring } from "react-spring/renderprops";
+import { Transition, animated } from '@react-spring/web';
+import { Messages } from 'iconsax-react';
+import { GoogleLogin, GoogleLogout } from 'react-google-login';
+import toast from 'react-hot-toast';
+import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-const Header = ({ user, isInMeeting, toggleChat = false }) => {
+import Avatar from '../assets/images/avatar.jpg';
+import Logo from '../assets/images/logo.jpg';
+import { CLIENT_ID } from '../config';
+import { setUserData } from '../store/user-slice';
+
+const Header = ({ isChatOpen, setIsChatOpen }) => {
+  const user = useSelector((state) => state.user.user);
+
+  const dispatch = useDispatch();
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const onSignInSuccess = (res) => {
+    dispatch(setUserData(res.profileObj));
+  };
+
+  const onSignInFailure = (err) => {
+    toast.error(err.error.replace(/_/g, ' '));
+  };
+
+  const logout = () => {
+    dispatch(setUserData({}));
+  };
+
   return (
-    <nav className="navbar navbar-expand my-0 py-0">
-      <a className="navbar-brand" href="/">
-        <div className="navbar-header d-flex">
-          <img
-            src={require("../images/imminent-logo1.jpg").default}
-            width="40px"
-            height="40px"
-            className="rounded-circle"
-          />
-          &ensp;
-          <h3 style={{ marginTop: "1px" }}>
-            <b>imminent</b>
-          </h3>
+    <>
+      <div className="flex justify-between p-3">
+        <div
+          className="flex items-center gap-x-2.5 cursor-pointer"
+          onClick={() => {
+            if (location.pathname !== '/' && !location.pathname.includes('/leave')) {
+              if (window.confirm('Are you sure you want to redirect to home?')) {
+                navigate('/');
+              }
+            } else {
+              navigate('/');
+            }
+          }}>
+          <img src={Logo} width={40} className="rounded-full" alt="logo" />
+          <span className="text-2xl font-semibold hover:text-sky-700">imminent</span>
         </div>
-      </a>
-
-      {user ? (
-        <Spring from={{ opacity: 0 }} to={{ opacity: 1 }}>
-          {(props) => (
-            <ul
-              className="navbar-nav ml-auto d-flex align-items-center"
-              style={props}
-            >
-              {isInMeeting ? (
-                <span style={{ display: "flex", alignItems: "center" }}>
-                  <li
-                    className="header-icons"
-                    style={{ cursor: "pointer" }}
-                    onClick={toggleChat}
-                  >
-                    <MdChat id="header-chatbtn" />
-                  </li>
-                  <span className="header-icons" style={{ fontSize: "36px" }}>
-                    &nbsp;&nbsp;|&nbsp;
-                  </span>
-                </span>
+        <div className="flex items-center gap-2">
+          <Transition items={Object.keys(user).length} from={{ opacity: 0 }} enter={{ opacity: 1 }}>
+            {(styles, item) =>
+              item ? (
+                <animated.div style={styles} className="flex items-center gap-x-2.5">
+                  <div className="flex flex-col items-end text-xs font-semibold">
+                    <span className="hidden sm:block">{user.email}</span>
+                    {!location.pathname.includes('/room') && (
+                      <GoogleLogout
+                        clientId={CLIENT_ID}
+                        render={(props) => (
+                          <span
+                            className="text-sky-800 underline hover:decoration-double cursor-pointer"
+                            onClick={() => {
+                              props.onClick();
+                              navigate('/');
+                            }}>
+                            logout
+                          </span>
+                        )}
+                        onLogoutSuccess={logout}
+                      />
+                    )}
+                  </div>
+                  <img src={user.imageUrl} width={40} className="rounded-full" alt="" />
+                </animated.div>
               ) : (
-                <li className="user-name-email">
-                  <b
-                    style={{
-                      fontSize: "0.9em",
-                      textAlign: "right",
-                      lineHeight: "0.9",
-                    }}
-                  >
-                    {user.displayName}
-                  </b>
-                  <span
-                    style={{
-                      fontSize: "0.7em",
-                      fontFamily: "'Roboto Mono', monospace",
-                    }}
-                  >
-                    {user.email}
-                  </span>
-                </li>
-              )}
-
-              <li className="nav-item">
-                <a className="nav-link" onClick={switchAccount}>
-                  <img
-                    src={user.photoURL}
-                    width="40px"
-                    className="rounded-circle mb-1"
-                  />
-                </a>
-              </li>
-            </ul>
+                <GoogleLogin
+                  clientId={CLIENT_ID}
+                  render={(props) => (
+                    <animated.div
+                      className="flex items-center gap-x-2.5 cursor-pointer"
+                      style={styles}
+                      onClick={props.onClick}
+                      disabled={props.disabled}>
+                      <span className="font-semibold hover:text-sky-700">Sign in</span>
+                      <img src={Avatar} width={40} className="rounded-full" alt="anonymous-user" />
+                    </animated.div>
+                  )}
+                  onSuccess={onSignInSuccess}
+                  onFailure={onSignInFailure}
+                  cookiePolicy={'single_host_origin'}
+                  isSignedIn={true}
+                  uxMode="redirect"
+                />
+              )
+            }
+          </Transition>
+          {location.pathname.includes('/room') && (
+            <Messages
+              size="40"
+              variant="Bulk"
+              className="border-l-2 pl-1 text-sky-600 cursor-pointer"
+              onClick={() => setIsChatOpen(!isChatOpen)}
+            />
           )}
-        </Spring>
-      ) : (
-        <Spring from={{ opacity: 0 }} to={{ opacity: 1 }}>
-          {(props) => (
-            <ul className="navbar-nav ml-auto" style={props}>
-              <li className="nav-item">
-                <a className="nav-link" onClick={switchAccount}>
-                  <b>Sign in</b>
-                  &ensp;
-                  <img
-                    src={require("../images/login-avatar.jpg").default}
-                    width="40px"
-                    className="rounded-circle mb-1"
-                  />
-                </a>
-              </li>
-            </ul>
-          )}
-        </Spring>
-      )}
-    </nav>
+        </div>
+      </div>
+    </>
   );
 };
 

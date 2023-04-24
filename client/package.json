@@ -1,43 +1,39 @@
 {
-  "name": "imminent-client",
+  "name": "imminent",
   "version": "0.1.0",
   "private": true,
   "proxy": "http://localhost:8000/",
   "dependencies": {
-    "@tensorflow-models/body-pix": "^2.1.0",
-    "@tensorflow-models/handpose": "^0.0.7",
-    "@tensorflow/tfjs": "^3.3.0",
-    "@testing-library/jest-dom": "^5.11.9",
-    "@testing-library/react": "^11.2.5",
-    "@testing-library/user-event": "^12.7.2",
-    "bootstrap": "^4.6.0",
-    "classnames": "^2.2.6",
-    "firebase": "^8.2.9",
-    "lodash": "^4.17.21",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
-    "react-hot-toast": "^1.0.2",
-    "react-icons": "^4.2.0",
-    "react-router-dom": "^5.2.0",
-    "react-scripts": "4.0.2",
-    "react-speech-recognition": "^3.8.0",
-    "react-spring": "^8.0.27",
-    "reactstrap": "^8.9.0",
+    "@headlessui/react": "^1.4.3",
+    "@react-spring/web": "^9.3.2",
+    "@reduxjs/toolkit": "^1.7.1",
+    "@testing-library/jest-dom": "^5.16.1",
+    "@testing-library/react": "^12.1.2",
+    "@testing-library/user-event": "^13.5.0",
+    "iconsax-react": "^0.0.8",
+    "keyboard-css": "^1.2.4",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-google-login": "^5.2.2",
+    "react-hot-toast": "^2.1.1",
+    "react-redux": "^7.2.6",
+    "react-router-dom": "^6.2.1",
+    "react-scripts": "5.0.0",
+    "react-webcam": "^6.0.0",
     "rect-scaler": "^1.0.0",
-    "seedrandom": "^2.4.4",
-    "simple-peer": "^9.9.3",
-    "socket.io-client": "^4.0.0",
+    "simple-peer": "^9.11.0",
+    "socket.io-client": "^4.4.0",
     "uuid": "^8.3.2",
-    "web-vitals": "^1.1.0"
+    "web-vitals": "^2.1.2"
   },
   "scripts": {
-    "start": "react-scripts --openssl-legacy-provider start",
+    "start": "set PORT=8008 && react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "exports": {
-    "./lib/tokenize": "./lib/tokenize.js"
+    "eject": "react-scripts eject",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix",
+    "format": "prettier --write './**/*.{js,jsx,ts,tsx,css,md,json}' --config ./.prettierrc"
   },
   "eslintConfig": {
     "extends": [
@@ -56,5 +52,15 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.1",
+    "eslint": "^8.5.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.25.3",
+    "eslint-plugin-prettier": "^4.0.0",
+    "postcss": "^8.4.5",
+    "prettier": "^2.5.1",
+    "tailwindcss": "^3.0.8"
   }
 }

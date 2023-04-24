@@ -1,31 +1,42 @@
-import "bootstrap/dist/css/bootstrap.css";
-import "./App.css";
-import { Switch, BrowserRouter as Router, Route } from "react-router-dom";
-//COMPONENTS
-import Home from "./pages/Home";
-import JoinRoom from "./pages/JoinRoom";
-import Room from "./pages/Room";
-import LeftMeeting from "./pages/LeftMeeting";
+import { useState } from 'react';
 
-//PROVIDERS
-import UserProvider from "./UserProvider";
-import WebcamProvider from "./WebcamProvider";
+import './App.css';
+import 'keyboard-css';
+import { Toaster } from 'react-hot-toast';
+import { Routes, Route } from 'react-router-dom';
 
-function App() {
+import Header from './components/Header';
+import Home from './pages/Home';
+import JoinRoom from './pages/JoinRoom';
+import Leave from './pages/Leave';
+import Room from './pages/Room';
+
+const App = () => {
+  const [isChatOpen, setIsChatOpen] = useState(false);
   return (
-    <UserProvider>
-      <Router>
-        <Switch>
-          <Route exact path="/" component={Home} />
-          <WebcamProvider>
-            <Route path="/joinroom/:roomID" component={JoinRoom} />
-            <Route path="/room/:roomID" component={Room} />
-            <Route path="/leftmeeting/:roomID" component={LeftMeeting} />
-          </WebcamProvider>
-        </Switch>
-      </Router>
-    </UserProvider>
+    <>
+      <div>
+        <Toaster
+          toastOptions={{
+            className: 'text-sm'
+          }}
+          containerStyle={{
+            top: 10
+          }}
+        />
+      </div>
+      <Header isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/join-room/:id" element={<JoinRoom />} />
+        <Route
+          path="/room/:id"
+          element={<Room isChatOpen={isChatOpen} setIsChatOpen={setIsChatOpen} />}
+        />
+        <Route path="/leave/:id" element={<Leave />} />
+      </Routes>
+    </>
   );
-}
+};
 
 export default App;
